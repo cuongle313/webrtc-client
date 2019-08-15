@@ -61,7 +61,13 @@ function handlePageLoad() {
         uri: `sip:${username}@${hostname}`,
         transportOptions: { wsServers: [`wss://${hostname}:${port}${path}`] },
         authorizationUsersip: username,
-        password: password
+        password: password,
+        sessionDescriptionHandlerOptions: {
+            constraints: {
+                audio: true,
+                video: false
+            },
+        }
     };
 
     document.getElementById("extension-username").innerHTML = username;
@@ -164,11 +170,19 @@ function showRingingCallElements(callType){
 }
 
 function handleButtonAnswerClick(){
+    let option = {
+        sessionDescriptionHandlerOptions: {
+            constraints: {
+                audio: true,
+                video: false
+            },
+        }
+    }
     if(
         session.status === SESSION_STATUS.INBOUND_RINGING ||
         session.status === SESSION_STATUS.OUTBOUND_RINGING
     ){
-        session.accept();
+        session.accept(option);
     }
 }
 function handleButtonHangupClick(){
@@ -199,6 +213,12 @@ function handleButtonCallClick(){
                         audio: true,
                         video: false
                     }
+                },
+                sessionDescriptionHandlerOptions: {
+                    constraints: {
+                        audio: true,
+                        video: false
+                    },
                 }
             }
         );
