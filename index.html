@@ -1,6 +1,8 @@
-<html>
+<html lang="en">
 
 <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <style>
         .info {
             border: 1px #ccc solid;
@@ -9,7 +11,7 @@
     </style>
 </head>
 
-<body onload="handlePageLoad()">
+<body>
     <audio id="player" autoplay></audio>
     <div class="info">
         <table>
@@ -21,10 +23,9 @@
                 </tr>
                 <tr>
                     <td>
-                        Username:
-                    </td>
-                    <td>
-                        <span id="extension-username"></span>
+                        <input id="input-username" type="text" name="username" placeholder="Tài khoản" />
+                        <input id="input-password" type="text" name="password" placeholder="Mật khẩu" />
+                        <input id="button-register" type="button" value="Đăng ký" onclick="handlePageLoad()" />
                     </td>
                 </tr>
                 <tr>
@@ -48,10 +49,10 @@
                 </tr>
                 <tr>
                     <td>
-                            ID:
+                            Máy lẻ:
                         </td>
                         <td>
-                            <span id="call-id"></span>
+                            <span id="extension-username"></span>
                         </td>
                     </tr>
                 <tr>
@@ -88,7 +89,7 @@
                 </tr>
                 <tr>
                     <td>
-                            <input id="input-phone" type="text" name="phone" placeholder="Số điện thoại" value="0912205468" />
+                            <input id="input-phone" type="text" name="phone" placeholder="Số điện thoại" />
                             <input id="button-call" type="button" value="Gọi" onclick="handleButtonCallClick()" />
                     </td>
                 </tr>
@@ -100,7 +101,7 @@
                 </tr>
                 <tr>
                         <td colspan="2">
-                            <input id="input-phone-transfer" type="text" name="phone" placeholder="Số điện thoại" value="0912205468"  style="display:none"/>
+                            <input id="input-phone-transfer" type="text" name="phone" placeholder="Số điện thoại" style="display:none"/>
                             <input id="button-transfer" type="button" value="Chuyển tiếp" onclick="handleButtonTransferClick()" style="display:none"/>
                         </td>
                     </tr>

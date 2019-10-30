@@ -1,20 +1,18 @@
-var username = "";
-var password = "";
-var hostname = "wss-dev.api-connect.io"
-var port = "8089";
-var path = "/ws";
+var hostname = "fs-03.api-connect.io"
+var port = "7443";
+var path = "";
 var config = undefined;
 var ua = undefined;
 var session = undefined;
 
 var options = undefined;
 var client = undefined;
-var updateCallInfoInterval = setInterval(function(){
-    if(session){
+var updateCallInfoInterval = setInterval(function () {
+    if (session) {
         document.getElementById("session-status").innerHTML = session.status;
-        
+
         switch (session.status) {
-            case SESSION_STATUS.IDLE:{
+            case SESSION_STATUS.IDLE: {
                 document.getElementById("call-status").innerHTML = "";
                 document.getElementById("call-phone").innerHTML = "";
                 document.getElementById("call-duration").innerHTML = "";
@@ -22,41 +20,43 @@ var updateCallInfoInterval = setInterval(function(){
                 document.getElementById("call-id").innerHTML = "";
                 break;
             }
-            case SESSION_STATUS.ANSWERING:{
+            case SESSION_STATUS.ANSWERING: {
                 document.getElementById("call-status").innerHTML = "đang trả lời";
                 document.getElementById("call-phone").innerHTML = session.remoteIdentity.uri.normal.user;
-                document.getElementById("call-duration").innerHTML = Math.floor(((new Date())-session.startTime)/1000);
-                document.getElementById("call-type").innerHTML = (session.type === "inbound"?"cuộc gọi vào":"cuộc gọi ra");
+                document.getElementById("call-duration").innerHTML = Math.floor(((new Date()) - session.startTime) / 1000);
+                document.getElementById("call-type").innerHTML = (session.type === "inbound" ? "cuộc gọi vào" : "cuộc gọi ra");
                 document.getElementById("call-id").innerHTML = session.id;
                 break;
             }
             case SESSION_STATUS.INBOUND_RINGING:
-            case SESSION_STATUS.OUTBOUND_RINGING:{
+            case SESSION_STATUS.OUTBOUND_RINGING: {
                 document.getElementById("call-status").innerHTML = "đang đổ chuông";
                 document.getElementById("call-phone").innerHTML = session.remoteIdentity.uri.normal.user;
-                document.getElementById("call-type").innerHTML = (session.type === "inbound"?"cuộc gọi vào":"cuộc gọi ra");
+                document.getElementById("call-type").innerHTML = (session.type === "inbound" ? "cuộc gọi vào" : "cuộc gọi ra");
                 document.getElementById("call-id").innerHTML = session.id;
                 break;
             }
-                
-        
+
+
             default:
                 break;
         }
     }
-},500);
+}, 500);
 
 const SESSION_STATUS = {
     IDLE: 9,
     OUTBOUND_STARTING: 1,
     OUTBOUND_RINGING: 2,
     INBOUND_RINGING: 4,
-    ANSWERING:12
-} 
+    ANSWERING: 12
+}
 
 
 function handlePageLoad() {
-   config = {
+    var username = document.getElementById("input-username").value;
+    var password = document.getElementById("input-password").value;
+    config = {
         displayName: username,
         uri: `sip:${username}@${hostname}`,
         transportOptions: { wsServers: [`wss://${hostname}:${port}${path}`] },
@@ -99,36 +99,36 @@ function handlePageLoad() {
         session.type = "inbound";
         showRingingCallElements();
 
-        session.on('accepted',function(){
+        session.on('accepted', function () {
             console.log("ACCEPTED");
             showAnswerCallElements();
         });
-        session.on('rejected',function(){
+        session.on('rejected', function () {
             console.log("REJECTED");
             showIdleCallElements();
         })
-        session.on('cancel',function(){
+        session.on('cancel', function () {
             console.log("CANCEL");
             showIdleCallElements();
         })
-        session.on('failed',function(){
+        session.on('failed', function () {
             console.log("FAILED");
             showIdleCallElements();
         })
-        session.on('bye',function(){
+        session.on('bye', function () {
             console.log("BYE");
             showIdleCallElements();
         })
 
-        session.on('trackAdded', function() { 
+        session.on('trackAdded', function () {
             console.log("TRACK_ADDED");
-            var pc = session.sessionDescriptionHandler.peerConnection; 
+            var pc = session.sessionDescriptionHandler.peerConnection;
             var player = document.getElementById("player");
-            var remoteStream = new MediaStream(); 
+            var remoteStream = new MediaStream();
 
-            pc.getReceivers().forEach(function(receiver) { 
-                remoteStream.addTrack(receiver.track); 
-            }); 
+            pc.getReceivers().forEach(function (receiver) {
+                remoteStream.addTrack(receiver.track);
+            });
             if (typeof player.srcObject !== 'undefined') {
                 player.srcObject = remoteStream;
             } else if (typeof player.mozSrcObject !== 'undefined') {
@@ -138,12 +138,12 @@ function handlePageLoad() {
             } else {
                 console.log('Error attaching stream to element.');
             }
-            player.play(); 
+            player.play();
         });
     })
 }
 
-function showIdleCallElements(callType){
+function showIdleCallElements(callType) {
     document.getElementById('button-answer').style.display = "none";
     document.getElementById('button-hangup').style.display = "none";
     document.getElementById('button-transfer').style.display = "none";
@@ -152,7 +152,7 @@ function showIdleCallElements(callType){
     document.getElementById('input-phone').style.display = "inline";
 }
 
-function showAnswerCallElements(callType){
+function showAnswerCallElements(callType) {
     document.getElementById('button-answer').style.display = "none";
     document.getElementById('button-hangup').style.display = "inline";
     document.getElementById('button-transfer').style.display = "inline";
@@ -160,7 +160,7 @@ function showAnswerCallElements(callType){
     document.getElementById('button-call').style.display = "none";
     document.getElementById('input-phone').style.display = "none";
 }
-function showRingingCallElements(callType){
+function showRingingCallElements(callType) {
     document.getElementById('button-answer').style.display = "inline";
     document.getElementById('button-hangup').style.display = "none";
     document.getElementById('button-transfer').style.display = "none";
@@ -169,7 +169,7 @@ function showRingingCallElements(callType){
     document.getElementById('input-phone').style.display = "none";
 }
 
-function handleButtonAnswerClick(){
+function handleButtonAnswerClick() {
     let option = {
         sessionDescriptionHandlerOptions: {
             constraints: {
@@ -178,33 +178,33 @@ function handleButtonAnswerClick(){
             },
         }
     }
-    if(
+    if (
         session.status === SESSION_STATUS.INBOUND_RINGING ||
         session.status === SESSION_STATUS.OUTBOUND_RINGING
-    ){
+    ) {
         session.accept(option);
     }
 }
-function handleButtonHangupClick(){
-    if(
+function handleButtonHangupClick() {
+    if (
         session.status === SESSION_STATUS.ANSWERING
-    ){
+    ) {
         session.terminate();
     }
 }
-function handleButtonTransferClick(){
-    if(
+function handleButtonTransferClick() {
+    if (
         session.status === SESSION_STATUS.ANSWERING
-    ){
+    ) {
         session.refer(document.getElementById("input-phone-transfer").value);
     }
 }
-function handleButtonCallClick(){
+function handleButtonCallClick() {
     let status = SESSION_STATUS.IDLE;
-    if(session){
+    if (session) {
         status = session.status
     }
-    if(status === SESSION_STATUS.IDLE){
+    if (status === SESSION_STATUS.IDLE) {
         session = ua.invite(
             document.getElementById('input-phone').value,
             {
@@ -226,36 +226,36 @@ function handleButtonCallClick(){
 
         showAnswerCallElements();
 
-        session.on('accepted',function(){
+        session.on('accepted', function () {
             console.log("ACCEPTED");
             showAnswerCallElements();
         });
-        session.on('rejected',function(){
+        session.on('rejected', function () {
             console.log("REJECTED");
             showIdleCallElements();
         })
-        session.on('cancel',function(){
+        session.on('cancel', function () {
             console.log("CANCEL");
             showIdleCallElements();
         })
-        session.on('failed',function(){
+        session.on('failed', function () {
             console.log("FAILED");
             showIdleCallElements();
         })
-        session.on('bye',function(){
+        session.on('bye', function () {
             console.log("BYE");
             showIdleCallElements();
         })
 
-        session.on('trackAdded', function() { 
+        session.on('trackAdded', function () {
             console.log("TRACK_ADDED");
-            var pc = session.sessionDescriptionHandler.peerConnection; 
+            var pc = session.sessionDescriptionHandler.peerConnection;
             var player = document.getElementById("player");
-            var remoteStream = new MediaStream(); 
+            var remoteStream = new MediaStream();
 
-            pc.getReceivers().forEach(function(receiver) { 
-                remoteStream.addTrack(receiver.track); 
-            }); 
+            pc.getReceivers().forEach(function (receiver) {
+                remoteStream.addTrack(receiver.track);
+            });
 
             if (typeof player.srcObject !== 'undefined') {
                 player.srcObject = remoteStream;
@@ -266,7 +266,7 @@ function handleButtonCallClick(){
             } else {
                 console.log('Error attaching stream to element.');
             }
-            player.play(); 
+            player.play();
         });
     }
 }
