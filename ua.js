@@ -230,7 +230,7 @@ function handleButtonCallClick() {
             console.log("ACCEPTED");
             showAnswerCallElements();
         });
-        session.on('rejected', function () {
+        session.on('rejected', function (s) {
             console.log("REJECTED");
             showIdleCallElements();
         })
@@ -238,13 +238,33 @@ function handleButtonCallClick() {
             console.log("CANCEL");
             showIdleCallElements();
         })
-        session.on('failed', function () {
+        session.on('failed', function (req) {
+            switch (req.reasonPhrase) {
+                case "Busy Here":
+                    return (
+                        console.log("Máy bận")
+                    )
+                case "Not Found":
+                    return (
+                        console.log("số không tồn tại")
+                    )
+                default:
+                    break;
+            }
             console.log("FAILED");
             showIdleCallElements();
         })
         session.on('bye', function () {
             console.log("BYE");
             showIdleCallElements();
+        })
+
+        session.on('unavailable', function () {
+            console.log("UNAVAILABLE")
+        })
+
+        session.on('not found', function () {
+            console.log("NOT_FOUND")
         })
 
         session.on('trackAdded', function () {
