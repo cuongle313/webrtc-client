@@ -1,12 +1,11 @@
-var hostname = "fs-03.api-connect.io"
-var port = "7443";
-var path = "";
+
 var config = undefined;
 var ua = undefined;
 var session = undefined;
 
 var options = undefined;
 var client = undefined;
+var ringbacktone = document.getElementById("ringbacktone");
 var updateCallInfoInterval = setInterval(function () {
     if (session) {
         document.getElementById("session-status").innerHTML = session.status;
@@ -26,6 +25,7 @@ var updateCallInfoInterval = setInterval(function () {
                 document.getElementById("call-duration").innerHTML = Math.floor(((new Date()) - session.startTime) / 1000);
                 document.getElementById("call-type").innerHTML = (session.type === "inbound" ? "cuộc gọi vào" : "cuộc gọi ra");
                 document.getElementById("call-id").innerHTML = session.id;
+
                 break;
             }
             case SESSION_STATUS.INBOUND_RINGING:
@@ -56,6 +56,9 @@ const SESSION_STATUS = {
 function handlePageLoad() {
     var username = document.getElementById("input-username").value;
     var password = document.getElementById("input-password").value;
+    var hostname = document.getElementById("input-hostname").value;
+    var port = document.getElementById("input-port").value;
+    var path = document.getElementById("input-path").value;
     config = {
         displayName: username,
         uri: `sip:${username}@${hostname}`,
@@ -120,12 +123,12 @@ function handlePageLoad() {
             showIdleCallElements();
         })
 
+        console.log(session)
         session.on('trackAdded', function () {
             console.log("TRACK_ADDED");
             var pc = session.sessionDescriptionHandler.peerConnection;
             var player = document.getElementById("player");
             var remoteStream = new MediaStream();
-
             pc.getReceivers().forEach(function (receiver) {
                 remoteStream.addTrack(receiver.track);
             });
@@ -178,27 +181,53 @@ function handleButtonAnswerClick() {
             },
         }
     }
-    if (
-        session.status === SESSION_STATUS.INBOUND_RINGING ||
-        session.status === SESSION_STATUS.OUTBOUND_RINGING
-    ) {
-        session.accept(option);
-    }
+    session.accept(option);
 }
 function handleButtonHangupClick() {
-    if (
-        session.status === SESSION_STATUS.ANSWERING
-    ) {
-        session.terminate();
-    }
+    session.terminate();
 }
 function handleButtonTransferClick() {
     if (
         session.status === SESSION_STATUS.ANSWERING
     ) {
-        session.refer(document.getElementById("input-phone-transfer").value);
+    	//nó đang không hiểu biến UserAgent.makeURI này. nên không register được
+    var _session = ua.invite(`${document.getElementById("input-phone-transfer").value}@${document.getElementById("input-hostname").value}`,  {
+                media: {
+                    constraints: {
+                        audio: true,
+                        video: false
+                    }
+                },
+                sessionDescriptionHandlerOptions: {
+                    constraints: {
+                        audio: true,
+                        video: false
+                    },
+                },
+                // inviteWithoutSdp: true,
+		       	// rel100: SIP.C.supported.SUPPORTED,
+		       	activeAfterTransfer: false //die when the transfer is completed
+            });
+    	// const replacementSession = newInviter('22707', UserAgent.makeURI(`sip:${document.getElementById("input-phone-transfer").value}@${document.getElementById("input-hostname").value}`);
+		session.refer(_session);
+        // session.refer(`sip:${document.getElementById("input-phone-transfer").value}@${document.getElementById("input-hostname").value}`);
     }
 }
+
+function startRingbackTone() {
+    console.log("playyyyyyy",ringbacktone)
+    try { 
+        ringbacktone.play(); 
+        ringbacktone[0].play(); 
+    }
+    catch (e) { }
+}
+
+function stopRingbackTone() {
+    try {  ringbacktone.pause(); }
+    catch (e) { }
+}
+
 function handleButtonCallClick() {
     let status = SESSION_STATUS.IDLE;
     if (session) {
@@ -223,9 +252,19 @@ function handleButtonCallClick() {
             }
         );
         session.type = "outbound";
-
+        session.on('progress', function(response) {
+            if (response.statusCode == 183 && response.body && session.hasOffer && !session.dialog) {
+              if (!response.hasHeader('require') || response.getHeader('require').indexOf('100rel') === -1) {
+                if (session.sessionDescriptionHandler.hasDescription(response.getHeader('Content-Type'))) {
+                  // @hack: https://github.com/onsip/SIP.js/issues/242
+                  session.status = SIP.Session.C.STATUS_EARLY_MEDIA
+                  waitingForApplyingAnswer(response)
+                }
+              }
+            }
+          })
         showAnswerCallElements();
-
+     
         session.on('accepted', function () {
             console.log("ACCEPTED");
             showAnswerCallElements();
@@ -266,7 +305,6 @@ function handleButtonCallClick() {
         session.on('not found', function () {
             console.log("NOT_FOUND")
         })
-
         session.on('trackAdded', function () {
             console.log("TRACK_ADDED");
             var pc = session.sessionDescriptionHandler.peerConnection;
@@ -291,7 +329,24 @@ function handleButtonCallClick() {
     }
 }
 
-
-
-
-
+function waitingForApplyingAnswer(response) {
+    let i = 1,
+      clearTimer
+  
+    setTimeout(function check() {
+      i++
+      clearTimer = setTimeout(check, 10)
+      if (session.hasAnswer || i > 14) {
+        if (session.hasAnswer) {
+          clearTimeout(clearTimer)
+        } else if (i === 15) {
+          clearTimeout(clearTimer)
+          session.sessionDescriptionHandler.setDescription(response.body).catch((error) => {
+            session.logger.warn(error)
+            session.failed(response, C.causes.BAD_MEDIA_DESCRIPTION)
+            session.terminate({ statusCode: 488, reason_phrase: 'Bad Media Description' })
+          })
+        }
+      }
+    }, 10)
+  }
