@@ -57,12 +57,11 @@ function handlePageLoad() {
     var username = document.getElementById("input-username").value;
     var password = document.getElementById("input-password").value;
     var hostname = document.getElementById("input-hostname").value;
-    var port = document.getElementById("input-port").value;
-    var path = document.getElementById("input-path").value;
+    var wss = document.getElementById("input-wss").value;
     config = {
         displayName: username,
         uri: `sip:${username}@${hostname}`,
-        transportOptions: { wsServers: [`wss://${hostname}:${port}${path}`] },
+        transportOptions: { wsServers: [`wss://${wss}`] },
         authorizationUsersip: username,
         password: password,
         sessionDescriptionHandlerOptions: {
